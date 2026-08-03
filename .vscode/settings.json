@@ -1,4 +1,4 @@
 {
-  "python.defaultInterpreterPath": "/voc/data/venvs/project/starter/bin/python",
+  // "python.defaultInterpreterPath": "/voc/data/venvs/project/starter/bin/python",
   "git.openRepositoryInParentFolders": "never"
 }
