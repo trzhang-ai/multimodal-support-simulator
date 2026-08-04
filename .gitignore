@@ -175,3 +175,4 @@ cython_debug/
 
 workdir/
 evals/.DS_Store
+uploaded_media/

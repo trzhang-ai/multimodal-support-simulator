@@ -1,0 +1,14 @@
+Evidence command:
+EVAL_NUM_REPEATS=1 .venv/bin/python evals/audio/test_cases.py
+
+Equivalent project command:
+EVAL_NUM_REPEATS=1 uv run evals/audio/test_cases.py
+
+Result:
+- professional_audio: completed
+- audio_with_pii: completed
+- Aggregate assertions: 80.0%
+- Runtime errors: none
+- Exit code: 0
+
+The score is model-dependent and can vary between runs.

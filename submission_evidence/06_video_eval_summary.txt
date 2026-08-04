@@ -1,0 +1,14 @@
+Evidence command:
+EVAL_NUM_REPEATS=1 .venv/bin/python evals/video/test_cases.py
+
+Equivalent project command:
+EVAL_NUM_REPEATS=1 uv run evals/video/test_cases.py
+
+Result:
+- professional_video: completed
+- video_with_face: completed
+- Aggregate assertions: 87.5%
+- Runtime errors: none
+- Exit code: 0
+
+The score is model-dependent and can vary between runs.

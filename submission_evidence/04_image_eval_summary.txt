@@ -1,0 +1,15 @@
+Evidence command:
+EVAL_NUM_REPEATS=1 .venv/bin/python evals/image/test_cases.py
+
+Equivalent project command:
+EVAL_NUM_REPEATS=1 uv run evals/image/test_cases.py
+
+Result:
+- professional_image: completed
+- image_with_person: completed
+- low_quality_image: completed
+- Aggregate assertions: 100.0%
+- Runtime errors: none
+- Exit code: 0
+
+The score is model-dependent and can vary between runs.

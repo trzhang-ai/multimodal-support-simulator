@@ -216,6 +216,10 @@ uv run pytest tests/ -vv
 
 The integration test consumes API quota and requires working credentials and network access.
 
+## Submission evidence
+
+Review artifacts are indexed in [`submission_evidence/README.md`](submission_evidence/README.md). They include automated-verification results, all four Pydantic Eval summaries, a completed Gradio conversation, and readable Phoenix screenshots showing the trace hierarchy, `session.id`, and blocked-turn feedback.
+
 ## Evaluations
 
 The eval suites measure moderation quality rather than only code correctness. They combine deterministic checks of the moderation flags with LLM-as-a-judge evaluation of the rationale.

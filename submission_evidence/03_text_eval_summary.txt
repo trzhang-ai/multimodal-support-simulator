@@ -1,0 +1,15 @@
+Evidence command:
+EVAL_NUM_REPEATS=1 .venv/bin/python evals/text/test_cases.py
+
+Equivalent project command:
+EVAL_NUM_REPEATS=1 uv run evals/text/test_cases.py
+
+Result:
+- professional_text: completed
+- text_with_pii: completed
+- unfriendly_text: completed
+- Aggregate assertions: 83.3%
+- Runtime errors: none
+- Exit code: 0
+
+The score is model-dependent and can vary between runs.

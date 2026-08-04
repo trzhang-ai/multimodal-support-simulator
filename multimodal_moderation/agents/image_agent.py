@@ -37,11 +37,15 @@ image_moderation_agent = Agent(
 async def moderate_image(
     model_choice: ModelChoice,
     image_source: bytes,
-    media_type: str
+    media_type: str,
 ) -> ImageModerationResult:
     image_input = BinaryContent(
         data=image_source,
         media_type=media_type,
     )
-    result = await image_moderation_agent.run([image_input], model=model_choice.model)
+    result = await image_moderation_agent.run(
+        ["Please moderate the following image", image_input],
+        model=model_choice.model,
+        model_settings=model_choice.model_settings,
+    )
     return result.output

@@ -1,0 +1,12 @@
+Rubric-aligned schema behavior check
+
+Each negative case was constructed with only its required non-flag fields.
+Each positive case set exactly one moderation flag to True.
+
+text: defaults_false=True, any_true_flags=True
+image: defaults_false=True, any_true_flags=True
+video: defaults_false=True, any_true_flags=True
+audio: defaults_false=True, any_true_flags=True
+
+Result: all four modality subclasses use safe False defaults and report
+is_flagged=True when any moderation flag is True.

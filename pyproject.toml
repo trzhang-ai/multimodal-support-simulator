@@ -46,6 +46,9 @@ exclude = ["evals*", "tests*"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+markers = [
+    "integration: tests that call external services",
+]
 
 [dependency-groups]
 dev = [
