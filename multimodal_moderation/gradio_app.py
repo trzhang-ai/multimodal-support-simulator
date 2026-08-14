@@ -17,20 +17,21 @@ KEY COMPONENTS:
 - create_chat_interface(): Builds the Gradio UI
 """
 
+import logging
 import os
-import requests
-import gradio as gr
 import uuid
 from pathlib import Path
-from typing import List, Tuple, Any
-from pydantic_ai.messages import BinaryContent
-import logging
+from typing import Any, List, Tuple
 
-from multimodal_moderation.env import USER_API_KEY, API_BASE_URL
-from multimodal_moderation.tracing import setup_tracing, get_tracer, add_media_to_span
-from multimodal_moderation.agents.customer_agent import customer_agent
-from multimodal_moderation.utils import detect_file_type
+import gradio as gr
+import requests
 from opentelemetry import trace
+from pydantic_ai.messages import BinaryContent
+
+from multimodal_moderation.agents.customer_agent import customer_agent
+from multimodal_moderation.env import API_BASE_URL, USER_API_KEY
+from multimodal_moderation.tracing import add_media_to_span, get_tracer, setup_tracing
+from multimodal_moderation.utils import detect_file_type
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -206,10 +207,7 @@ class ChatSessionWithTracing:
     def __init__(self):
         self.session_id = str(uuid.uuid4())
 
-        self.conversation_span = tracer.start_span(
-            name="conversation",
-            attributes={"session.id": self.session_id}
-        )
+        self.conversation_span = tracer.start_span(name="conversation", attributes={"session.id": self.session_id})
 
     async def chat_with_gemini(self, message: dict, history: List, past_messages: List) -> Tuple[str, List, str]:
         """
@@ -236,7 +234,7 @@ class ChatSessionWithTracing:
             name="chat_turn",
             context=trace.set_span_in_context(self.conversation_span),
         ) as span:
-            
+
             logger.info(f"New turn - Text: '{message.get('text', '')[:50]}...', Files: {len(message.get('files', []))}")
 
             # Build prompt for the AI customer (includes text and media)
@@ -292,7 +290,7 @@ class ChatSessionWithTracing:
                             # Content safe - read file and add to prompt
                             with open(file_path, "rb") as f:
                                 file_bytes = f.read()
-                            
+
                             prompt_parts.append(BinaryContent(data=file_bytes, media_type=mime_type))
 
                         except ValueError as e:
@@ -352,49 +350,43 @@ def create_chat_interface() -> gr.Blocks:
         # State to hold Pydantic AI's message history (preserves context across turns)
         past_messages_state = gr.State([])
 
-        # Create feedback_display first (with render=False) so we can reference it
-        # in ChatInterface's additional_outputs below, then render it in the sidebar later
+        # Define the feedback component before wiring it as a chat output.
         feedback_display = gr.Textbox(
             label="💬 Moderation Agent Feedback",
             placeholder="No feedback yet",
             interactive=False,
             visible=True,
             lines=10,
-            render=False,  # Don't render yet - will render in sidebar
+            render=False,
         )
 
-        # UI Layout
         gr.Markdown("# 🤖 ACME Customer Service Training Agent")
         gr.Markdown("Welcome to ACME Corporation's customer service training!")
 
         with gr.Row():
-            # Left column: Chat interface (75% width)
             with gr.Column(scale=3):
-
                 gr.ChatInterface(
-                    fn=chat_session.chat_with_gemini, # This is the function called at each turn, and should be chat_session.chat_with_gemini
-                    type="messages",  # Use newer messages format (supports multimodal)
-                    multimodal=True,  # Enable file uploads by setting this to True
-                    editable=False,  # Don't allow editing past messages
+                    fn=chat_session.chat_with_gemini,
+                    type="messages",
+                    multimodal=True,
+                    editable=False,
                     textbox=gr.MultimodalTextbox(
-                        file_count="multiple",  # Allow multiple files
-                        file_types=["image", "video", "audio"],  # Set this to a list of allowed file types ("image", "video", "audio")
-                        sources=["upload", "microphone"],  # Allow file upload and recording
+                        file_count="multiple",
+                        file_types=["image", "video", "audio"],
+                        sources=["upload", "microphone"],
                         placeholder="Type a message, upload files, or record audio...",
                     ),
                     chatbot=gr.Chatbot(
                         show_copy_button=True,
-                        type="messages",  # Use messages format for multimodal support
+                        type="messages",
                         placeholder="👋 Start by greeting the customer or introducing yourself. The AI customer will respond with their complaint.",
                         height="75vh",
                     ),
-                    additional_inputs=[past_messages_state],  # This should be a list containing past_messages_state
-                    additional_outputs=[past_messages_state, feedback_display],  # This should be a list containing past_messages_state and feedback_display
+                    additional_inputs=[past_messages_state],
+                    additional_outputs=[past_messages_state, feedback_display],
                 )
 
-            # Right column: Feedback and guidelines (25% width)
             with gr.Column(scale=1):
-                # Render the feedback display at the top of the sidebar
                 feedback_display.render()
 
                 # End conversation button - closes the tracing span

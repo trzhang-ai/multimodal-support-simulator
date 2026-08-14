@@ -1,4 +1,4 @@
-Rubric-aligned schema behavior check
+Schema behavior check
 
 Each negative case was constructed with only its required non-flag fields.
 Each positive case set exactly one moderation flag to True.

@@ -9,11 +9,11 @@ import pytest
 from pydantic import ValidationError
 
 from multimodal_moderation.types.moderation_result import (
+    AudioModerationResult,
+    ImageModerationResult,
     ModerationResult,
     TextModerationResult,
-    ImageModerationResult,
     VideoModerationResult,
-    AudioModerationResult,
 )
 
 
@@ -36,7 +36,9 @@ class TestModerationResult:
         """Verify ModerationResult is a Pydantic BaseModel"""
         result = ModerationResult(rationale="Test")
         assert hasattr(result, "model_dump"), "ModerationResult should have model_dump method (Pydantic BaseModel)"
-        assert hasattr(result, "model_validate"), "ModerationResult should have model_validate method (Pydantic BaseModel)"
+        assert hasattr(
+            result, "model_validate"
+        ), "ModerationResult should have model_validate method (Pydantic BaseModel)"
 
 
 class TestTextModerationResult:
@@ -72,13 +74,18 @@ class TestTextModerationResult:
 
     def test_inherits_from_moderation_result(self):
         """Verify TextModerationResult inherits from ModerationResult"""
-        assert issubclass(TextModerationResult, ModerationResult), \
-            "TextModerationResult should inherit from ModerationResult"
+        assert issubclass(
+            TextModerationResult, ModerationResult
+        ), "TextModerationResult should inherit from ModerationResult"
 
-    def test_all_fields_are_required(self):
-        """Verify all fields are required"""
-        with pytest.raises(ValidationError, match="contains_pii|is_unfriendly|is_unprofessional"):
-            TextModerationResult(rationale="Test")
+    def test_flags_default_to_false(self):
+        """Verify omitted moderation flags use the safe, unflagged defaults."""
+        result = TextModerationResult(rationale="Test")
+
+        assert result.contains_pii is False
+        assert result.is_unfriendly is False
+        assert result.is_unprofessional is False
+        assert result.is_flagged is False
 
 
 class TestImageModerationResult:
@@ -114,13 +121,18 @@ class TestImageModerationResult:
 
     def test_inherits_from_moderation_result(self):
         """Verify ImageModerationResult inherits from ModerationResult"""
-        assert issubclass(ImageModerationResult, ModerationResult), \
-            "ImageModerationResult should inherit from ModerationResult"
+        assert issubclass(
+            ImageModerationResult, ModerationResult
+        ), "ImageModerationResult should inherit from ModerationResult"
 
-    def test_all_fields_are_required(self):
-        """Verify all fields are required"""
-        with pytest.raises(ValidationError, match="contains_pii|is_disturbing|is_low_quality"):
-            ImageModerationResult(rationale="Test")
+    def test_flags_default_to_false(self):
+        """Verify omitted moderation flags use the safe, unflagged defaults."""
+        result = ImageModerationResult(rationale="Test")
+
+        assert result.contains_pii is False
+        assert result.is_disturbing is False
+        assert result.is_low_quality is False
+        assert result.is_flagged is False
 
 
 class TestVideoModerationResult:
@@ -156,13 +168,18 @@ class TestVideoModerationResult:
 
     def test_inherits_from_moderation_result(self):
         """Verify VideoModerationResult inherits from ModerationResult"""
-        assert issubclass(VideoModerationResult, ModerationResult), \
-            "VideoModerationResult should inherit from ModerationResult"
+        assert issubclass(
+            VideoModerationResult, ModerationResult
+        ), "VideoModerationResult should inherit from ModerationResult"
 
-    def test_all_fields_are_required(self):
-        """Verify all fields are required"""
-        with pytest.raises(ValidationError, match="contains_pii|is_disturbing|is_low_quality"):
-            VideoModerationResult(rationale="Test")
+    def test_flags_default_to_false(self):
+        """Verify omitted moderation flags use the safe, unflagged defaults."""
+        result = VideoModerationResult(rationale="Test")
+
+        assert result.contains_pii is False
+        assert result.is_disturbing is False
+        assert result.is_low_quality is False
+        assert result.is_flagged is False
 
 
 class TestAudioModerationResult:
@@ -202,10 +219,15 @@ class TestAudioModerationResult:
 
     def test_inherits_from_moderation_result(self):
         """Verify AudioModerationResult inherits from ModerationResult"""
-        assert issubclass(AudioModerationResult, ModerationResult), \
-            "AudioModerationResult should inherit from ModerationResult"
+        assert issubclass(
+            AudioModerationResult, ModerationResult
+        ), "AudioModerationResult should inherit from ModerationResult"
 
-    def test_all_fields_are_required(self):
-        """Verify all fields are required"""
-        with pytest.raises(ValidationError, match="transcription|contains_pii|is_unfriendly|is_unprofessional"):
-            AudioModerationResult(rationale="Test", transcription="Test")
+    def test_flags_default_to_false(self):
+        """Verify omitted moderation flags use the safe, unflagged defaults."""
+        result = AudioModerationResult(rationale="Test", transcription="Test")
+
+        assert result.contains_pii is False
+        assert result.is_unfriendly is False
+        assert result.is_unprofessional is False
+        assert result.is_flagged is False

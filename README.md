@@ -1,144 +1,92 @@
-# OmniTrainer — Multimodal Customer Service Trainer
+# Multimodal Support Quality Lab
 
-OmniTrainer is an AI-powered customer-service training application for the fictional **ACME Enterprise**. A trainee acts as a support representative while a Google Gemini-powered agent plays an upset customer whose ACME Power Widget Pro has stopped working.
+A local customer-support simulation that checks text, image, video, and audio inputs before they reach a Gemini-powered customer agent. Unsafe content is blocked with structured feedback, while OpenTelemetry traces make the full moderation path inspectable in Arize Phoenix.
 
-Before a trainee's message or uploaded media reaches the simulated customer, specialized moderation agents inspect it for safety and professionalism. Flagged content is blocked and accompanied by an explanation so the trainee can improve the response.
+This repository packages a completed and extended implementation of an existing reference architecture as a reproducible portfolio prototype. It demonstrates multimodal safety gating, typed LLM outputs, API integration, evaluation, and observability; it is not presented as a production safety system or as an entirely from-scratch architecture.
 
-> **Project status:** Completed learning project based on provided starter scaffolding. It is a local proof of concept, not a production moderation or customer-service system.
+## System workflow
 
-## Features
-
-- Moderates text, images, video, and audio with specialized Pydantic AI agents.
-- Detects personally identifiable information (PII), unfriendly or unprofessional language, disturbing visual content, and low-quality media.
-- Transcribes audio as part of the audio moderation result.
-- Returns typed, structured Pydantic results with moderation flags and a rationale.
-- Blocks flagged trainee content before it reaches the simulated customer.
-- Provides a multimodal Gradio chat interface with moderation feedback.
-- Exposes the moderation agents through authenticated FastAPI endpoints.
-- Records conversation, moderation, and LLM spans with OpenTelemetry and Arize Phoenix.
-- Includes unit/integration tests and LLM-based evaluation suites for every modality.
-
-## How it works
-
-1. The trainee sends text or media through the Gradio interface.
-2. Gradio forwards each item to the appropriate FastAPI moderation endpoint.
-3. A specialized moderation agent calls Gemini and returns a typed Pydantic result.
-4. If any configured safety flag is `true`, the content is blocked and the rationale is shown to the trainee.
-5. If all content is safe, it is sent to the Gemini-powered customer agent and the conversation continues.
-6. OpenTelemetry spans make the conversation flow and timings visible in Phoenix.
+1. A support representative sends text or media through the Gradio interface.
+2. Gradio routes each item to the matching authenticated FastAPI endpoint.
+3. A modality-specific Pydantic AI agent calls Gemini and returns a typed moderation result.
+4. Flagged content is blocked and the rationale is shown to the representative.
+5. Safe content reaches the simulated customer agent so the conversation can continue.
+6. Conversation, turn, moderation, and model spans are exported to Phoenix.
 
 ```mermaid
 flowchart LR
-    trainee["Trainee support agent"] --> gradio["Gradio chat UI<br/>localhost:7860"]
-    gradio --> api["FastAPI moderation service<br/>localhost:8000"]
-    api --> agents["Text / Image / Video / Audio agents"]
-    agents --> gemini["Google Gemini"]
-    gemini --> schemas["Pydantic moderation results"]
-    schemas --> decision{"Any unsafe flag?"}
-    decision -->|Yes| blocked["Block content and show feedback"]
-    decision -->|No| customer["Gemini-powered customer agent"]
-    customer --> gradio
-    gradio -. OpenTelemetry traces .-> phoenix["Arize Phoenix<br/>localhost:6006"]
-    customer -. Instrumented LLM spans .-> phoenix
+    user["Support representative"] --> ui["Gradio multimodal UI"]
+    ui --> api["FastAPI moderation API"]
+    api --> agents["Text / image / video / audio agents"]
+    agents --> model["Google Gemini"]
+    model --> result["Typed Pydantic result"]
+    result --> gate{"Any policy flag?"}
+    gate -->|Yes| blocked["Block and explain"]
+    gate -->|No| customer["Simulated customer agent"]
+    customer --> ui
+    ui -. traces .-> phoenix["OpenTelemetry + Phoenix"]
 ```
 
-## Moderation outputs
+## What the implementation demonstrates
 
-| Modality | Structured checks |
+- Structured moderation contracts for text, image, video, and audio, including an audio transcription.
+- A single `is_flagged` decision contract with safe `False` defaults for every moderation flag.
+- Bearer-authenticated FastAPI endpoints and a multimodal Gradio client.
+- Blocking logic that prevents flagged content from reaching the customer agent.
+- Conversation-level and turn-level spans, including moderation feedback attributes.
+- Rule-based and LLM-as-a-judge evaluation suites for each modality.
+- A locked Python 3.12 environment and CI checks for tests and formatting.
+
+## Contribution boundary
+
+The portfolio work completes and extends a supplied project scaffold. The distinction matters because repository evidence should be interview-defensible.
+
+| Completed or extended in this portfolio implementation | Retained from the reference scaffold |
 | --- | --- |
-| Text | `contains_pii`, `is_unfriendly`, `is_unprofessional`, `rationale` |
-| Image | `contains_pii`, `is_disturbing`, `is_low_quality`, `rationale` |
-| Video | `contains_pii`, `is_disturbing`, `is_low_quality`, `rationale` |
-| Audio | `transcription`, `contains_pii`, `is_unfriendly`, `is_unprofessional`, `rationale` |
+| Text and image moderation-agent execution paths | Core FastAPI endpoint structure and static bearer-token pattern |
+| Typed audio result schema, Boolean defaults, and `is_flagged` behavior across modalities | Audio, video, and simulated-customer agent foundations |
+| Multimodal Gradio routing, blocking behavior, message history, and trace hierarchy | Base environment, tracing, evaluation, and test structure |
+| Text and image evaluation cases, validation artifacts, documentation, and CI | Fictional ACME scenario and supplied sample media |
 
-## Architecture and technology
+See [`NOTICE.md`](NOTICE.md) for the upstream reference and licensing boundary.
 
-| Component | Responsibility | Technology |
-| --- | --- | --- |
-| Moderation agents | Modality-specific prompts and model calls | Pydantic AI, Google Gemini |
-| Output schemas | Typed moderation flags and rationales | Pydantic |
-| Customer agent | Simulates the ACME customer across multiple chat turns | Pydantic AI, Google Gemini |
-| Backend | Authenticated moderation endpoints | FastAPI, Uvicorn |
-| Frontend | Multimodal training conversation and feedback | Gradio |
-| Observability | Conversation hierarchy, timing, attributes, and model spans | OpenTelemetry, Arize Phoenix, OpenInference |
-| Evaluations | Rule-based and LLM-as-a-judge quality checks | Pydantic Evals |
+## Stack
 
-## Repository structure
+| Layer | Technology |
+| --- | --- |
+| Model integration | Pydantic AI, Google Gemini |
+| Contracts | Pydantic |
+| API | FastAPI, Uvicorn |
+| Interface | Gradio |
+| Observability | OpenTelemetry, OpenInference, Arize Phoenix |
+| Evaluation | Pydantic Evals, deterministic assertions, LLM-as-a-judge |
+| Reproducibility | Python 3.12, uv, `uv.lock` |
 
-```text
-.
-├── multimodal_moderation/
-│   ├── agents/                 # Text, image, video, audio, and customer agents
-│   ├── types/                  # Pydantic result and model-choice types
-│   ├── app.py                  # Starts Phoenix, FastAPI, and Gradio together
-│   ├── fastapi_app.py          # REST moderation API
-│   ├── gradio_app.py           # Multimodal training interface
-│   ├── tracing.py              # OpenTelemetry/Phoenix setup
-│   ├── env.py                  # Environment and model configuration
-│   └── utils.py                # File-type detection
-├── evals/                      # Text, image, video, and audio evaluation suites
-├── tests/                      # Automated tests and test media
-├── env.example                 # Environment-variable template
-├── pyproject.toml              # Package metadata and dependencies
-└── uv.lock                     # Reproducible dependency lockfile
-```
+## Run locally
 
-## Getting started
-
-### Prerequisites
+### Requirements
 
 - Python 3.12
-- [`uv`](https://docs.astral.sh/uv/getting-started/installation/)
-- A Gemini API key from Google AI Studio, or the course-provided Vocareum credentials
+- [`uv`](https://docs.astral.sh/uv/)
+- A Google AI Studio Gemini API key
 
-### 1. Install the locked environment
-
-From the repository root:
+Install the locked environment:
 
 ```bash
 uv sync --locked
 ```
 
-This creates the project-local `.venv` and installs the versions recorded in `uv.lock`. If your editor asks for an interpreter, select:
-
-```text
-.venv/bin/python
-```
-
-### 2. Configure environment variables
-
-Create a private `.env` file from the included template:
+Create a private environment file and replace the placeholder values:
 
 ```bash
 cp env.example .env
 ```
 
-Configure the three required variables:
-
 ```dotenv
-USER_API_KEY=replace-with-a-local-api-token
-GEMINI_API_KEY=replace-with-your-gemini-api-key
+USER_API_KEY=replace-with-a-local-bearer-token
+GEMINI_API_KEY=replace-with-your-google-ai-studio-key
 DEFAULT_GOOGLE_MODEL=gemini-2.5-flash-lite
 ```
-
-`USER_API_KEY` protects the local FastAPI endpoints and only needs to be a non-empty value for this demo. Do not commit `.env`; it is already ignored by Git.
-
-If you are using a regular Google AI Studio key, remove or comment out the Vocareum-only line from the copied `.env`:
-
-```dotenv
-# GOOGLE_GEMINI_BASE_URL=https://gemini.vocareum.com
-```
-
-Optional variables and their defaults:
-
-| Variable | Default | Purpose |
-| --- | --- | --- |
-| `EVAL_JUDGE_MODEL` | `DEFAULT_GOOGLE_MODEL` | Model used by LLM-as-a-judge evaluators |
-| `EVAL_NUM_REPEATS` | `1` | Number of times each eval case is repeated |
-| `API_BASE_URL` | `http://localhost:8000` | FastAPI base URL used by Gradio |
-| `PHOENIX_URL` | `http://127.0.0.1:6006` | Phoenix endpoint used by the trace exporter |
-
-## Run the application
 
 Start Phoenix, FastAPI, and Gradio together:
 
@@ -146,30 +94,15 @@ Start Phoenix, FastAPI, and Gradio together:
 uv run multimodal-moderation
 ```
 
-Wait for all three services to start, then open:
-
-| Service | URL |
+| Service | Local URL |
 | --- | --- |
-| Training application | [http://localhost:7860](http://localhost:7860) |
+| Gradio application | [http://localhost:7860](http://localhost:7860) |
 | FastAPI documentation | [http://localhost:8000/docs](http://localhost:8000/docs) |
 | Phoenix traces | [http://localhost:6006/projects](http://localhost:6006/projects) |
 
-Press `Ctrl+C` in the terminal to stop the application.
+## API surface
 
-### Suggested training flow
-
-1. Greet the customer and ask how you can help.
-2. Respond to the complaint about the non-working ACME Power Widget Pro.
-3. Try text, image, video, or audio input and review the moderation feedback panel.
-4. Deliberately try an unfriendly message to see it blocked before reaching the customer agent.
-5. Continue with a professional response and attempt to resolve the issue.
-6. Select **End Conversation** so the conversation span is closed in Phoenix.
-
-Gradio limits uploaded media to 5 MB per file. Unsupported file types are rejected before they are sent to the model.
-
-## REST API
-
-All endpoints use bearer authentication with the value configured as `USER_API_KEY`.
+All endpoints use `Authorization: Bearer <USER_API_KEY>`.
 
 | Method | Endpoint | Input |
 | --- | --- | --- |
@@ -177,60 +110,38 @@ All endpoints use bearer authentication with the value configured as `USER_API_K
 | `POST` | `/api/v1/moderate_image_file` | Multipart upload named `file` |
 | `POST` | `/api/v1/moderate_video_file` | Multipart upload named `file` |
 | `POST` | `/api/v1/moderate_audio_file` | Multipart upload named `file` |
-| `GET` | `/api/v1/health` | No body; bearer token still required |
+| `GET` | `/api/v1/health` | No body; authentication is still required |
 
-Text example:
+Example:
 
 ```bash
 curl -X POST http://localhost:8000/api/v1/moderate_text \
   -H "Authorization: Bearer replace-with-your-user-api-key" \
   -H "Content-Type: application/json" \
-  -d '{"text":"Welcome to ACME support. How can I help?"}'
+  -d '{"text":"Welcome to support. How can I help?"}'
 ```
 
-Image example:
+## Validation
+
+CI uses the locked dependency graph and runs formatting checks plus the complete non-integration test suite:
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/moderate_image_file \
-  -H "Authorization: Bearer replace-with-your-user-api-key" \
-  -F "file=@path/to/image.jpg"
+uv lock --check
+uv sync --locked
+uv run black --check multimodal_moderation evals tests
+uv run isort --check-only multimodal_moderation evals tests
+uv run pytest tests -m "not integration" -vv
 ```
 
-You can also use the Swagger UI at `http://localhost:8000/docs`: select **Authorize**, enter the `USER_API_KEY` value, choose an endpoint, and select **Try it out**.
-
-## Tests
-
-The test suite checks schemas, all four moderation agents, environment setup, the Gradio interface, and the end-to-end Gemini connection.
-
-Run the tests without the live Gemini connectivity check:
+The optional integration test makes a live Gemini call and consumes API quota:
 
 ```bash
-uv run pytest tests/ -m "not integration" -vv
+uv run pytest tests -m integration -vv
 ```
 
-Run the complete suite, including the real Gemini API call:
+Historical execution records and screenshots are collected in [`docs/validation`](docs/validation/README.md). The saved evaluation run used one repeat over a small set of cases, so its percentages are regression evidence rather than a statistically robust benchmark.
 
-```bash
-uv run pytest tests/ -vv
-```
-
-The integration test consumes API quota and requires working credentials and network access.
-
-## Submission evidence
-
-Review artifacts are indexed in [`submission_evidence/README.md`](submission_evidence/README.md). They include automated-verification results, all four Pydantic Eval summaries, a completed Gradio conversation, and readable Phoenix screenshots showing the trace hierarchy, `session.id`, and blocked-turn feedback.
-
-## Evaluations
-
-The eval suites measure moderation quality rather than only code correctness. They combine deterministic checks of the moderation flags with LLM-as-a-judge evaluation of the rationale.
-
-For a quick, lower-cost run, set this in `.env`:
-
-```dotenv
-EVAL_NUM_REPEATS=1
-```
-
-Run each modality from the repository root:
+Run the modality evaluations with:
 
 ```bash
 uv run evals/text/test_cases.py
@@ -239,30 +150,15 @@ uv run evals/audio/test_cases.py
 uv run evals/video/test_cases.py
 ```
 
-The three application services do not need to be running for these scripts. LLM evaluations are non-deterministic, so a score below 100% does not necessarily indicate a code defect. Every eval run calls the model under test and may also call the judge model; increasing `EVAL_NUM_REPEATS` improves the consistency estimate but also increases cost and runtime.
-
-## Observability with Phoenix
-
-After completing a conversation, open [http://localhost:6006/projects](http://localhost:6006/projects) and select the default project. The trace hierarchy includes spans such as:
-
-```text
-conversation
-└── chat_turn
-    ├── moderate_text / moderate_image / moderate_video / moderate_audio
-    └── llm_customer
-```
-
-Phoenix can help answer questions such as which step failed, where latency occurred, and which moderation flags were returned. Tracing observes the workflow; it does not change the prompt or the model's answer.
-
 ## Important limitations
 
-- This project is a learning proof of concept and should not be used as a production safety boundary.
-- Moderation decisions are probabilistic and can contain false positives or false negatives.
-- API authentication uses one static local bearer token rather than a production identity system.
-- The Gradio interface enforces a 5 MB file limit, but the FastAPI upload endpoints do not independently enforce that limit.
-- Traces include trainee text, and uploaded media is copied locally to `uploaded_media/` for Phoenix visualization. Do not use real secrets, customer data, or PII; remove retained local media when it is no longer needed.
-- Use `uv sync --locked` for the reproducible learning environment. Upgrading major dependencies without a compatibility pass may require code changes.
+- Model-based moderation is probabilistic and can produce false positives or false negatives.
+- The static bearer token is suitable only for a local prototype, not a production identity boundary.
+- Gradio limits individual uploads to 5 MB, but the FastAPI upload endpoints do not independently enforce that limit.
+- Trace data can include user text, and media is copied to `uploaded_media/` for local visualization. Do not use real customer data, secrets, or PII.
+- The stored evaluation set contains only three text cases, three image cases, two audio cases, and two video cases.
+- Major dependency upgrades require a compatibility pass across Pydantic AI, Gradio, Phoenix, and Pydantic Evals.
 
-## Project provenance
+## Provenance and license
 
-ACME Enterprise and the ACME Power Widget Pro are fictional. The exercise sequence and starter scaffolding were supplied as learning materials; this repository contains the completed implementation.
+The fictional scenario and initial scaffold were supplied in Udacity's public [`cd13331-multimodal-public`](https://github.com/udacity/cd13331-multimodal-public) repository. The completed and extended scope is documented above and in [`NOTICE.md`](NOTICE.md). Starter-derived material remains subject to the upstream educational-content terms in [`LICENSE.md`](LICENSE.md); this combined repository does not assert a blanket MIT license.

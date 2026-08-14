@@ -1,7 +1,7 @@
 from pydantic_ai import Agent
+
 from multimodal_moderation.types.model_choice import ModelChoice
 from multimodal_moderation.types.moderation_result import TextModerationResult
-
 
 MODERATION_INSTRUCTIONS = """
 <context>
@@ -29,15 +29,13 @@ Provide a detailed rationale for your choices as well as a confidence score betw
 </output>
 """
 
-text_moderation_agent = Agent(
-    output_type=TextModerationResult,
-    instructions=MODERATION_INSTRUCTIONS
-)
+text_moderation_agent = Agent(output_type=TextModerationResult, instructions=MODERATION_INSTRUCTIONS)
+
 
 async def moderate_text(model_choice: ModelChoice, text: str) -> TextModerationResult:
     result = await text_moderation_agent.run(
-        user_prompt=['Please moderate the following text', text],
+        user_prompt=["Please moderate the following text", text],
         model=model_choice.model,
-        model_settings=model_choice.model_settings
+        model_settings=model_choice.model_settings,
     )
     return result.output

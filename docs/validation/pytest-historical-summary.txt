@@ -59,5 +59,6 @@ tests/test_video_agent.py::test_moderate_video_rationale_not_empty PASSED [100%]
 
 ======================= 46 passed, 4 deselected in 5.47s =======================
 
-The four deselected tests are documented transparently in
-RUBRIC_TEST_CONFLICT.md. No Udacity test file was modified.
+The four deselected assertions are documented in
+../provenance/test-contract-note.md. The supplied test file was unchanged when
+this historical result was captured.

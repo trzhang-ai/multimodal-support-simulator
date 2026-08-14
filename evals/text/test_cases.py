@@ -17,22 +17,22 @@ RUNNING EVALS:
 
 import sys
 from pathlib import Path
-from typing import List, Any
+from typing import Any, List
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
+import tenacity
 from pydantic import BaseModel, Field
+from pydantic_ai.retries import RetryConfig
 from pydantic_evals import Case, Dataset
 from pydantic_evals.evaluators import IsInstance, LLMJudge
-import tenacity
-from pydantic_ai.retries import RetryConfig
 
 from multimodal_moderation.agents.text_agent import moderate_text
 from multimodal_moderation.types.moderation_result import TextModerationResult
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from common_evaluators import HasRationale
-from config import get_model_under_test, get_judge_model
+from config import get_judge_model, get_model_under_test
 from utils import create_repeated_cases, get_test_data_path
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -76,13 +76,11 @@ async def run_text_moderation(inputs: List[TextInput]) -> TextModerationResult:
 #   - TextModerationCheck: Checks boolean flags match expected values
 #   - LLMJudge: Uses an LLM to evaluate if the rationale is good
 cases: List[Case[List[TextInput], TextModerationResult, Any]] = [
-
     Case(
         name="professional_text",
         # Read the text from a file for repeatibility (we could have also inlined it here)
         inputs=[TextInput(text_file=get_test_data_path("professional_text.txt"))],
         metadata={"category": "text_moderation"},
-
         evaluators=(
             # Check that no safety flags are raised for professional text
             TextModerationCheck(
@@ -137,7 +135,7 @@ cases: List[Case[List[TextInput], TextModerationResult, Any]] = [
 
 # Create the dataset with all test cases
 # create_repeated_cases() repeats each case EVAL_NUM_REPEATS times to measure consistency
-text_dataset = Dataset[List[TextInput], TextModerationResult, Any](\
+text_dataset = Dataset[List[TextInput], TextModerationResult, Any](
     cases=create_repeated_cases(cases),
     evaluators=[
         # Global evaluators that apply to all test cases

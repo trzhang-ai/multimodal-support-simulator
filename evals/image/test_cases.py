@@ -1,21 +1,21 @@
 import sys
 from pathlib import Path
-from typing import List, Any
+from typing import Any, List
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
+import tenacity
 from pydantic import BaseModel, Field
+from pydantic_ai.retries import RetryConfig
 from pydantic_evals import Case, Dataset
 from pydantic_evals.evaluators import IsInstance, LLMJudge
-import tenacity
-from pydantic_ai.retries import RetryConfig
 
 from multimodal_moderation.agents.image_agent import moderate_image
 from multimodal_moderation.types.moderation_result import ImageModerationResult
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from common_evaluators import HasRationale
-from config import get_model_under_test, get_judge_model
+from config import get_judge_model, get_model_under_test
 from utils import create_repeated_cases, get_test_data_path
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -27,6 +27,7 @@ judge_model, judge_settings = get_judge_model()
 
 class ImageInput(BaseModel):
     """Input schema for image moderation test cases."""
+
     image_file: str = Field(description="Path to image file to moderate")
 
 
@@ -78,7 +79,6 @@ cases: List[Case[List[ImageInput], ImageModerationResult, Any]] = [
         name="low_quality_image",
         inputs=[ImageInput(image_file=get_test_data_path("low_quality_image.jpg"))],
         metadata={"category": "image_moderation"},
-
         evaluators=(
             ImageModerationCheck(
                 expected_pii=True,

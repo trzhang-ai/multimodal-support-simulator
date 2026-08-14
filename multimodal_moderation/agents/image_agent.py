@@ -1,8 +1,8 @@
 from pydantic_ai import Agent
 from pydantic_ai.messages import BinaryContent
+
 from multimodal_moderation.types.model_choice import ModelChoice
 from multimodal_moderation.types.moderation_result import ImageModerationResult
-
 
 MODERATION_INSTRUCTIONS = """
 CONTEXT
