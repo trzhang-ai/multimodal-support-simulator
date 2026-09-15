@@ -1,4 +1,4 @@
-# Multimodal Support Quality Lab
+# Multimodal Customer Support Simulator
 
 A local customer-support simulation that checks text, image, video, and audio inputs before they reach a Gemini-powered customer agent. Unsafe content is blocked with structured feedback, while OpenTelemetry traces make the full moderation path inspectable in Arize Phoenix.
 
